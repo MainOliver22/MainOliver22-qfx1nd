@@ -8,7 +8,7 @@ let transactionHistory = [];
 
 // Endpoint to get transaction history
 router.get('/history', (req, res) => {
-    return res.json(employeeHistory);
+    return res.json(transactionHistory);
 });
 
 // Endpoint to add a transaction
