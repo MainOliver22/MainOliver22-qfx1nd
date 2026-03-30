@@ -34,7 +34,7 @@ app.use('/api/v1/', defaultLimiter);
 // --- Database connection ---
 const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/crypto_exchange';
 mongoose
-    .connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+    .connect(mongoUri)
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('MongoDB connection error:', err));
 
