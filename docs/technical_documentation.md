@@ -1,60 +1,100 @@
-# API Documentation
+# Cryptocurrency Exchange Platform Documentation
 
-## Overview
-This API allows users to interact with the application by providing various endpoints for performing CRUD operations.
+## Introduction
+This document provides comprehensive documentation for the cryptocurrency exchange platform, detailing API endpoints covering authentication, market data, wallet operations, and trading functionalities.
 
-## Endpoints
+## API Endpoints
 
-### GET /api/resource
-- **Description**: Retrieves a list of resources.
-- **Response**: JSON array of resources.
+### 1. Authentication
 
-### POST /api/resource
-- **Description**: Creates a new resource.
-- **Request Body**: JSON object representing the resource.
-- **Response**: Created resource with status code 201.
+#### Request
+```
+POST /api/v1/auth/login
+```
 
-### PUT /api/resource/{id}
-- **Description**: Updates an existing resource.
-- **Request Body**: JSON object with updated resource data.
-- **Response**: Updated resource.
+##### Request Body
+```json
+{
+   "username": "user",
+   "password": "pass"
+}
+```
 
-### DELETE /api/resource/{id}
-- **Description**: Deletes a resource.
-- **Response**: Status code 204 (No Content).
+#### Response
+```json
+{
+   "token": "your_jwt_token",
+   "expires_in": 3600
+}
+```
 
-# Setup Guide
+### 2. Market Data
 
-## Prerequisites
-- Node.js installed on your machine.
-- A package manager like npm or yarn.
+#### Get Market Data
 
-## Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/MainOliver22/MainOliver22-qfx1nd.git
-   cd MainOliver22-qfx1nd
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+#### Request
+```
+GET /api/v1/market/data
+```
 
-# Architecture Overview
+#### Response
+```json
+{
+   "markets": [
+       {
+           "symbol": "BTC/USD",
+           "last_price": "50000",
+           "high": "51000",
+           "low": "48000"
+       }
+   ]
+}
+```
 
-The project is structured in a modular fashion to separate concerns for easier maintainability. The main components are:
-- **Frontend**: The UI components built with React.
-- **Backend**: The server built with Node.js/Express.
-- **Database**: MongoDB for data persistence.
+### 3. Wallet Operations
 
-# Deployment Guide
+#### Check Wallet Balance
 
-To deploy the application, follow these steps:
-1. Build the application:
-   ```bash
-   npm run build
-   ```
-2. Deploy to your hosting provider (e.g., Heroku, AWS).
-3. Ensure environment variables are set for database connection and API keys.
+#### Request
+```
+GET /api/v1/wallet/balance
+```
 
----
+#### Response
+```json
+{
+   "BTC": "1.5",
+   "USD": "10000"
+}
+```
+
+### 4. Trading Functionality
+
+#### Place an Order
+
+#### Request
+```
+POST /api/v1/order
+```
+
+##### Request Body
+```json
+{
+   "symbol": "BTC/USD",
+   "side": "buy",
+   "type": "limit",
+   "price": "49000",
+   "quantity": "0.1"
+}
+```
+
+#### Response
+```json
+{
+   "order_id": "123456",
+   "status": "pending"
+}
+```
+
+## Conclusion
+This document will be updated as new endpoints and features are added to the cryptocurrency exchange platform.
