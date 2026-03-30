@@ -1,0 +1,110 @@
+# MongoDB VPS Connection Guide
+
+This guide provides step-by-step instructions for connecting to a MongoDB database hosted on a Virtual Private Server (VPS).
+
+## Table of Contents
+1. [Prerequisites](#prerequisites)
+2. [Installation](#installation)
+3. [Configuration](#configuration)
+4. [User Creation](#user-creation)
+5. [Firewall Setup](#firewall-setup)
+6. [Connection Strings](#connection-strings)
+7. [Node.js Backend Configuration Examples](#nodejs-backend-configuration-examples)
+
+## Prerequisites
+Before you start, ensure that you have:  
+- A VPS running a Linux distribution (e.g., Ubuntu)
+- Access to the server's terminal
+- Necessary permissions to install and configure software
+
+## Installation
+1. **Update your package list:**  
+   ```bash
+   sudo apt update
+   ```
+2. **Install MongoDB:**  
+   You can install MongoDB using the official MongoDB repository:
+   ```bash
+   wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
+   echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/multiverse amd64 packages/" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
+   sudo apt update
+   sudo apt install -y mongodb-org
+   ```
+3. **Start MongoDB service:**  
+   ```bash
+   sudo systemctl start mongod
+   ```
+4. **Enable MongoDB to start on boot:**  
+   ```bash
+   sudo systemctl enable mongod
+   ```
+
+## Configuration
+1. **Edit the MongoDB configuration file:**  
+   ```bash
+   sudo nano /etc/mongod.conf
+   ```
+   - Change the bind IP address to allow connections from your desired IPs (default is localhost):
+   ```yaml
+   bindIp: 0.0.0.0 # allows connections from any IP
+   ```
+
+2. **Restart the MongoDB service to apply changes:**  
+   ```bash
+   sudo systemctl restart mongod
+   ```
+
+## User Creation
+1. **Connect to MongoDB shell:**  
+   ```bash
+   mongo
+   ```
+2. **Create a new user with appropriate roles:**  
+   ```javascript
+   use admin
+   db.createUser({
+      user: 'yourUser',
+      pwd: 'yourPassword',
+      roles: [ { role: 'readWrite', db: 'yourDatabase' } ]
+   })
+   ```
+
+## Firewall Setup
+1. **Allow MongoDB port (default 27017) on UFW:**  
+   ```bash
+   sudo ufw allow 27017
+   ```
+2. **Enable the firewall if it is not already enabled:**  
+   ```bash
+   sudo ufw enable
+   ```
+
+## Connection Strings
+To connect to your MongoDB database, use the following connection string format:
+```plaintext
+mongodb://yourUser:yourPassword@yourVPS_IP:27017/yourDatabase
+```
+
+## Node.js Backend Configuration Examples
+1. **Install MongoDB driver:**  
+   ```bash
+   npm install mongodb
+   ```
+2. **Example code to connect to the MongoDB database:**  
+   ```javascript
+   const { MongoClient } = require('mongodb');
+   const uri = 'mongodb://yourUser:yourPassword@yourVPS_IP:27017/yourDatabase';
+   const client = new MongoClient(uri);
+   async function run() {
+       try {
+           await client.connect();
+           console.log('Connected to database');
+       } finally {
+           await client.close();
+       }
+   }
+   run().catch(console.dir);
+   ```
+
+## Conclusion
+You have successfully set up your MongoDB database on a VPS. Follow the steps in this guide for future references or when troubleshooting connection issues.
