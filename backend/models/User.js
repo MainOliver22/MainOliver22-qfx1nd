@@ -1,5 +1,18 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+
+const walletEntrySchema = new mongoose.Schema({
+    currency: {
+        type: String,
+        required: true,
+        uppercase: true,
+        trim: true
+    },
+    balance: {
+        type: Number,
+        default: 0,
+        min: 0
+    }
+}, { _id: false });
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -19,25 +32,17 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
-        minlength: 6
+        required: true
     },
     wallet: {
-        USD: { type: Number, default: 0 },
-        BTC: { type: Number, default: 0 },
-        ETH: { type: Number, default: 0 },
-        LTC: { type: Number, default: 0 }
+        type: [walletEntrySchema],
+        default: [
+            { currency: 'USD', balance: 0 },
+            { currency: 'BTC', balance: 0 },
+            { currency: 'ETH', balance: 0 },
+            { currency: 'LTC', balance: 0 }
+        ]
     }
 }, { timestamps: true });
-
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
-});
-
-userSchema.methods.comparePassword = function (candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
-};
 
 module.exports = mongoose.model('User', userSchema);

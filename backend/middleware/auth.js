@@ -6,6 +6,7 @@ if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
     throw new Error('JWT_SECRET environment variable is required in production.');
 }
 const EFFECTIVE_SECRET = JWT_SECRET || 'default_jwt_secret_change_in_production';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h'; // e.g. '1h', '7d', '30m' (jsonwebtoken timespan format)
 
 // Middleware for JWT authentication
 module.exports = {
@@ -21,7 +22,7 @@ module.exports = {
             id: user.id || user._id,
             username: user.username
         };
-        return jwt.sign(payload, EFFECTIVE_SECRET, { expiresIn: '1h' });
+        return jwt.sign(payload, EFFECTIVE_SECRET, { expiresIn: JWT_EXPIRES_IN });
     },
 
     // Verify a token (middleware)

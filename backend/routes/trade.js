@@ -43,16 +43,35 @@ router.post('/buy', verifyToken, async (req, res) => {
             return res.status(404).json({ message: 'User not found.' });
         }
 
-        if (user.wallet.USD < total) {
-            return res.status(400).json({ message: `Insufficient USD balance. Required: ${total}, Available: ${user.wallet.USD}` });
+        const usdEntry = user.wallet.find(w => w.currency === 'USD');
+        if (!usdEntry || usdEntry.balance < total) {
+            return res.status(400).json({ message: `Insufficient USD balance. Required: ${total}, Available: ${usdEntry ? usdEntry.balance : 0}` });
         }
 
-        // Atomically deduct USD and credit crypto, verifying USD balance is still sufficient
-        const cryptoField = `wallet.${sym}`;
+        const cryptoEntry = user.wallet.find(w => w.currency === sym);
+        if (!cryptoEntry) {
+            return res.status(400).json({ message: `${sym} is not supported in your wallet.` });
+        }
+
+        // Atomically deduct USD and credit crypto using arrayFilters
         const updatedUser = await User.findOneAndUpdate(
-            { _id: req.user.id, 'wallet.USD': { $gte: total } },
-            { $inc: { 'wallet.USD': -total, [cryptoField]: amount } },
-            { new: true }
+            {
+                _id: req.user.id,
+                wallet: { $elemMatch: { currency: 'USD', balance: { $gte: total } } }
+            },
+            {
+                $inc: {
+                    'wallet.$[usd].balance': -total,
+                    'wallet.$[crypto].balance': amount
+                }
+            },
+            {
+                arrayFilters: [
+                    { 'usd.currency': 'USD' },
+                    { 'crypto.currency': sym }
+                ],
+                new: true
+            }
         );
 
         if (!updatedUser) {
@@ -103,19 +122,41 @@ router.post('/sell', verifyToken, async (req, res) => {
             return res.status(404).json({ message: 'User not found.' });
         }
 
-        const cryptoBalance = user.wallet[sym] || 0;
+        const usdEntry = user.wallet.find(w => w.currency === 'USD');
+        if (!usdEntry) {
+            return res.status(400).json({ message: 'USD wallet entry not found.' });
+        }
+
+        const cryptoEntry = user.wallet.find(w => w.currency === sym);
+        const cryptoBalance = cryptoEntry ? cryptoEntry.balance : 0;
+        if (!cryptoEntry) {
+            return res.status(400).json({ message: `${sym} is not supported in your wallet.` });
+        }
         if (cryptoBalance < amount) {
             return res.status(400).json({ message: `Insufficient ${sym} balance. Required: ${amount}, Available: ${cryptoBalance}` });
         }
 
         const total = parseFloat((amount * price).toFixed(2));
 
-        // Atomically deduct crypto and credit USD, verifying crypto balance is still sufficient
-        const cryptoField = `wallet.${sym}`;
+        // Atomically deduct crypto and credit USD using arrayFilters
         const updatedUser = await User.findOneAndUpdate(
-            { _id: req.user.id, [cryptoField]: { $gte: amount } },
-            { $inc: { 'wallet.USD': total, [cryptoField]: -amount } },
-            { new: true }
+            {
+                _id: req.user.id,
+                wallet: { $elemMatch: { currency: sym, balance: { $gte: amount } } }
+            },
+            {
+                $inc: {
+                    'wallet.$[crypto].balance': -amount,
+                    'wallet.$[usd].balance': total
+                }
+            },
+            {
+                arrayFilters: [
+                    { 'crypto.currency': sym },
+                    { 'usd.currency': 'USD' }
+                ],
+                new: true
+            }
         );
 
         if (!updatedUser) {
