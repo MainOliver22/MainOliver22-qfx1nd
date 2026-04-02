@@ -1,59 +1,95 @@
 import React, { useState } from 'react';
+import * as api from '../services/api';
 
 function TradingUI() {
     const [orderType, setOrderType] = useState('market');
     const [action, setAction] = useState('buy');
+    const [symbol, setSymbol] = useState('BTC');
     const [amount, setAmount] = useState('');
     const [price, setPrice] = useState('');
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleOrderTypeChange = (event) => {
-        setOrderType(event.target.value);
-    };
-
-    const handleActionChange = (event) => {
-        setAction(event.target.value);
-    };
-
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        // Handle order submission logic here.
-        console.log(`Submitting ${action} ${orderType} order of amount: ${amount} at price: ${price}`);
+        setMessage('');
+        setError('');
+        setLoading(true);
+        try {
+            let res;
+            if (orderType === 'market') {
+                res = action === 'buy'
+                    ? await api.buy({ symbol, amount: parseFloat(amount) })
+                    : await api.sell({ symbol, amount: parseFloat(amount) });
+            } else {
+                res = await api.placeOrder({
+                    type: action,
+                    symbol,
+                    amount: parseFloat(amount),
+                    price: parseFloat(price)
+                });
+            }
+            setMessage(res.data.message || 'Order placed successfully.');
+            setAmount('');
+            setPrice('');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to place order.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div>
-                <label>
-                    <input type="radio" value="buy" checked={action === 'buy'} onChange={handleActionChange} /> Buy
-                </label>
-                <label>
-                    <input type="radio" value="sell" checked={action === 'sell'} onChange={handleActionChange} /> Sell
-                </label>
-            </div>
-            <div>
-                <label>
-                    <input type="radio" value="market" checked={orderType === 'market'} onChange={handleOrderTypeChange} /> Market
-                </label>
-                <label>
-                    <input type="radio" value="limit" checked={orderType === 'limit'} onChange={handleOrderTypeChange} /> Limit
-                </label>
-            </div>
-            <div>
-                <label>
-                    Amount:
-                    <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-                </label>
-            </div>
-            {orderType === 'limit' && (
-                <div>
+        <section>
+            <h2>Trading</h2>
+            {message && <p style={{ color: 'green' }}>{message}</p>}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: 8 }}>
                     <label>
-                        Price:
-                        <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
+                        <input type="radio" value="buy" checked={action === 'buy'} onChange={(e) => setAction(e.target.value)} /> Buy
+                    </label>
+                    &nbsp;
+                    <label>
+                        <input type="radio" value="sell" checked={action === 'sell'} onChange={(e) => setAction(e.target.value)} /> Sell
                     </label>
                 </div>
-            )}
-            <button type="submit">Place Order</button>
-        </form>
+                <div style={{ marginBottom: 8 }}>
+                    <label>
+                        <input type="radio" value="market" checked={orderType === 'market'} onChange={(e) => setOrderType(e.target.value)} /> Market
+                    </label>
+                    &nbsp;
+                    <label>
+                        <input type="radio" value="limit" checked={orderType === 'limit'} onChange={(e) => setOrderType(e.target.value)} /> Limit
+                    </label>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                    <label>Symbol:&nbsp;
+                        <select value={symbol} onChange={(e) => setSymbol(e.target.value)}>
+                            <option value="BTC">BTC</option>
+                            <option value="ETH">ETH</option>
+                            <option value="LTC">LTC</option>
+                        </select>
+                    </label>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                    <label>Amount:&nbsp;
+                        <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} min="0" step="any" required />
+                    </label>
+                </div>
+                {orderType === 'limit' && (
+                    <div style={{ marginBottom: 8 }}>
+                        <label>Price (USD):&nbsp;
+                            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} min="0" step="any" required />
+                        </label>
+                    </div>
+                )}
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Placing order...' : 'Place Order'}
+                </button>
+            </form>
+        </section>
     );
 }
 

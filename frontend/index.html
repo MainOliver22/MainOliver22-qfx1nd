@@ -4,55 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cryptocurrency Exchange</title>
-    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        #root { padding: 20px; }
-        header, footer { background: #f1f1f1; padding: 10px; }
-        section { margin: 20px 0; }
-    </style>
 </head>
 <body>
-    <header>
-        <h1>Cryptocurrency Exchange</h1>
-        <nav>
-            <a href="#">Landing Page</a> |
-            <a href="#">Markets</a> |
-            <a href="#">Trading</a> |
-            <a href="#">Dashboard</a> |
-            <a href="#">Wallet</a> |
-            <a href="#">Auth</a>
-        </nav>
-    </header>
     <div id="root"></div>
-    <footer>
-        <p>&copy; 2026 MainOliver22</p>
-    </footer>
-    <script>
-        const { useState, useEffect } = React;
-        function App() {
-            return (
-                <div>
-                    <LandingPage />
-                    <LiveTicker />
-                    <Markets />
-                    <Trading />
-                    <Dashboard />
-                    <Wallet />
-                    <Auth />
-                </div>
-            );
-        }
-        // Placeholder components
-        function LandingPage() { return <section><h2>Welcome to our Cryptocurrency Exchange!</h2></section>; }
-        function LiveTicker() { return <section><h2>Live Ticker: [Placeholder]</h2></section>; }
-        function Markets() { return <section><h2>Markets: [Placeholder]</h2></section>; }
-        function Trading() { return <section><h2>Trading: [Placeholder]</h2></section>; }
-        function Dashboard() { return <section><h2>Dashboard: [Placeholder]</h2></section>; }
-        function Wallet() { return <section><h2>Wallet: [Placeholder]</h2></section>; }
-        function Auth() { return <section><h2>Authentication: [Placeholder]</h2></section>; }
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
+    <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
