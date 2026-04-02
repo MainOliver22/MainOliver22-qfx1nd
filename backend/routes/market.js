@@ -1,62 +1,119 @@
 const express = require('express');
 const router = express.Router();
+const MarketData = require('../models/MarketData');
 
-// Mock cryptocurrency market data with simulated price variance
-const baseMarketData = {
-    BTC: { name: 'Bitcoin', symbol: 'BTC', price: 43250.00, change24h: 2.34, volume24h: 28900000000 },
-    ETH: { name: 'Ethereum', symbol: 'ETH', price: 2680.50, change24h: 1.87, volume24h: 15200000000 },
-    LTC: { name: 'Litecoin', symbol: 'LTC', price: 72.30, change24h: -0.45, volume24h: 520000000 },
-    XRP: { name: 'Ripple', symbol: 'XRP', price: 0.6120, change24h: 3.21, volume24h: 2100000000 },
-    ADA: { name: 'Cardano', symbol: 'ADA', price: 0.3850, change24h: -1.12, volume24h: 890000000 }
+const defaultMarketData = [
+    { symbol: 'BTC', name: 'Bitcoin', price: 43250.00, change24h: 2.34, volume24h: 28900000000, marketCap: 847000000000 },
+    { symbol: 'ETH', name: 'Ethereum', price: 2680.50, change24h: 1.87, volume24h: 15200000000, marketCap: 322000000000 },
+    { symbol: 'LTC', name: 'Litecoin', price: 72.30, change24h: -0.45, volume24h: 520000000, marketCap: 5200000000 },
+    { symbol: 'XRP', name: 'Ripple', price: 0.6120, change24h: 3.21, volume24h: 2100000000, marketCap: 33000000000 },
+    { symbol: 'ADA', name: 'Cardano', price: 0.3850, change24h: -1.12, volume24h: 890000000, marketCap: 13600000000 }
+];
+
+const seedMarketData = async () => {
+    try {
+        const count = await MarketData.countDocuments();
+        if (count === 0) {
+            await MarketData.insertMany(defaultMarketData);
+        }
+    } catch (err) {
+        console.error('Market data seed error:', err);
+    }
 };
 
-const getMarketData = () => {
-    return Object.values(baseMarketData).map(coin => ({
-        ...coin,
-        price: parseFloat((coin.price * (1 + (Math.random() - 0.5) * 0.002)).toFixed(2)),
-        lastUpdated: new Date().toISOString()
-    }));
-};
+// Seed on module load (intentionally fire-and-forget; routes handle DB errors gracefully)
+seedMarketData();
 
-// GET /api/market/data - Retrieve current market prices
-router.get('/data', (req, res) => {
-    res.json({ success: true, data: getMarketData() });
+// GET /api/market/data - Retrieve current market data from DB
+router.get('/data', async (req, res) => {
+    try {
+        const data = await MarketData.find().sort({ symbol: 1 });
+        res.json({ success: true, data });
+    } catch (err) {
+        console.error('Market data error:', err);
+        res.status(500).json({ message: 'Server error retrieving market data.' });
+    }
 });
 
-// GET /api/market/tickers - Get ticker information
-router.get('/tickers', (req, res) => {
-    const tickers = getMarketData().map(coin => ({
-        symbol: `${coin.symbol}/USD`,
-        last: coin.price,
-        change: coin.change24h,
-        volume: coin.volume24h,
-        lastUpdated: coin.lastUpdated
-    }));
-    res.json({ success: true, tickers });
+// GET /api/market/tickers - Get ticker information from DB
+router.get('/tickers', async (req, res) => {
+    try {
+        const data = await MarketData.find().sort({ symbol: 1 });
+        const tickers = data.map(coin => ({
+            symbol: `${coin.symbol}/USD`,
+            last: coin.price,
+            change: coin.change24h,
+            volume: coin.volume24h,
+            lastUpdated: coin.updatedAt
+        }));
+        res.json({ success: true, tickers });
+    } catch (err) {
+        console.error('Tickers error:', err);
+        res.status(500).json({ message: 'Server error retrieving tickers.' });
+    }
+});
+
+// GET /api/market/ticker/:symbol - Get single ticker from DB
+router.get('/ticker/:symbol', async (req, res) => {
+    try {
+        const symbol = req.params.symbol.toUpperCase();
+        const coin = await MarketData.findOne({ symbol });
+        if (!coin) {
+            return res.status(404).json({ message: `Symbol ${symbol} not found.` });
+        }
+        res.json({ success: true, data: coin });
+    } catch (err) {
+        console.error('Ticker error:', err);
+        res.status(500).json({ message: 'Server error retrieving ticker.' });
+    }
 });
 
 // GET /api/market/prices - Retrieve current prices (legacy)
-router.get('/prices', (req, res) => {
-    const prices = getMarketData().map(({ symbol, price }) => ({ symbol: `${symbol}/USD`, price }));
-    res.json(prices);
+router.get('/prices', async (req, res) => {
+    try {
+        const data = await MarketData.find().sort({ symbol: 1 });
+        const prices = data.map(coin => ({ symbol: `${coin.symbol}/USD`, price: coin.price }));
+        res.json(prices);
+    } catch (err) {
+        console.error('Prices error:', err);
+        res.status(500).json({ message: 'Server error retrieving prices.' });
+    }
 });
 
 // GET /api/market/charts - Chart placeholder data
-router.get('/charts', (req, res) => {
-    const charts = Object.keys(baseMarketData).map(symbol => ({ symbol: `${symbol}/USD`, chart: [] }));
-    res.json(charts);
+router.get('/charts', async (req, res) => {
+    try {
+        const data = await MarketData.find().sort({ symbol: 1 });
+        const charts = data.map(coin => ({ symbol: `${coin.symbol}/USD`, chart: [] }));
+        res.json(charts);
+    } catch (err) {
+        console.error('Charts error:', err);
+        res.status(500).json({ message: 'Server error retrieving charts.' });
+    }
 });
 
 // GET /api/market/order-books - Order book placeholder
-router.get('/order-books', (req, res) => {
-    const books = Object.keys(baseMarketData).map(symbol => ({ symbol: `${symbol}/USD`, orders: [] }));
-    res.json(books);
+router.get('/order-books', async (req, res) => {
+    try {
+        const data = await MarketData.find().sort({ symbol: 1 });
+        const books = data.map(coin => ({ symbol: `${coin.symbol}/USD`, orders: [] }));
+        res.json(books);
+    } catch (err) {
+        console.error('Order books error:', err);
+        res.status(500).json({ message: 'Server error retrieving order books.' });
+    }
 });
 
 // GET /api/market/trades - Recent trades placeholder
-router.get('/trades', (req, res) => {
-    const trades = Object.keys(baseMarketData).map(symbol => ({ symbol: `${symbol}/USD`, trades: [] }));
-    res.json(trades);
+router.get('/trades', async (req, res) => {
+    try {
+        const data = await MarketData.find().sort({ symbol: 1 });
+        const trades = data.map(coin => ({ symbol: `${coin.symbol}/USD`, trades: [] }));
+        res.json(trades);
+    } catch (err) {
+        console.error('Trades error:', err);
+        res.status(500).json({ message: 'Server error retrieving trades.' });
+    }
 });
 
 module.exports = router;

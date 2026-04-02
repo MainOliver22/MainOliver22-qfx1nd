@@ -1,13 +1,14 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
+const { apiLimiter: globalLimiter, authLimiter } = require('./middleware/rateLimiters');
 
 const authRoutes = require('./routes/auth');
 const marketRoutes = require('./routes/market');
 const walletRoutes = require('./routes/wallet');
 const tradeRoutes = require('./routes/trade');
+const transactionRoutes = require('./routes/transactions');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -30,22 +31,6 @@ app.use(cors());
 app.use(express.json());
 
 // Rate limiting
-const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: 'Too many requests, please try again later.' }
-});
-
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: 'Too many authentication attempts, please try again later.' }
-});
-
 app.use(globalLimiter);
 app.use('/api/auth', authLimiter);
 
@@ -54,6 +39,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/trade', tradeRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

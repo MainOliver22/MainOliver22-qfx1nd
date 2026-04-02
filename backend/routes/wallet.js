@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const { verifyToken } = require('../middleware/auth');
+const { apiLimiter } = require('../middleware/rateLimiters');
+
+const VALID_CURRENCIES = ['USD', 'BTC', 'ETH', 'LTC'];
 
 // GET /api/wallet/balance - Retrieve user's wallet balance
-router.get('/balance', verifyToken, async (req, res) => {
+router.get('/balance', verifyToken, apiLimiter, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('wallet username');
         if (!user) {
@@ -19,30 +23,26 @@ router.get('/balance', verifyToken, async (req, res) => {
 });
 
 // POST /api/wallet/deposit - Record deposit transaction
-router.post('/deposit', verifyToken, async (req, res) => {
+router.post('/deposit', verifyToken, apiLimiter, [
+    body('currency').trim().toUpperCase().isIn(VALID_CURRENCIES).withMessage(`Supported currencies: ${VALID_CURRENCIES.join(', ')}`),
+    body('amount').isFloat({ gt: 0 }).withMessage('Amount must be greater than zero.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg });
+    }
+
     try {
-        const { currency, amount } = req.body;
-        if (!currency || !amount) {
-            return res.status(400).json({ message: 'Currency and amount are required.' });
-        }
-        if (amount <= 0) {
-            return res.status(400).json({ message: 'Amount must be greater than zero.' });
-        }
+        const currencyKey = req.body.currency.toUpperCase();
+        const amount = parseFloat(req.body.amount);
 
-        const validCurrencies = ['USD', 'BTC', 'ETH', 'LTC'];
-        if (!validCurrencies.includes(currency.toUpperCase())) {
-            return res.status(400).json({ message: `Unsupported currency. Supported: ${validCurrencies.join(', ')}` });
-        }
-
-        const currencyKey = currency.toUpperCase();
-        const updateField = `wallet.${currencyKey}`;
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            { $inc: { [updateField]: amount } },
+        const user = await User.findOneAndUpdate(
+            { _id: req.user.id, 'wallet.currency': currencyKey },
+            { $inc: { 'wallet.$.balance': amount } },
             { new: true, select: 'wallet username' }
         );
         if (!user) {
-            return res.status(404).json({ message: 'User not found.' });
+            return res.status(404).json({ message: 'User not found or currency not in wallet.' });
         }
 
         const transaction = new Transaction({
@@ -68,41 +68,34 @@ router.post('/deposit', verifyToken, async (req, res) => {
 });
 
 // POST /api/wallet/withdraw - Process withdrawal with validation
-router.post('/withdraw', verifyToken, async (req, res) => {
+router.post('/withdraw', verifyToken, apiLimiter, [
+    body('currency').trim().toUpperCase().isIn(VALID_CURRENCIES).withMessage(`Supported currencies: ${VALID_CURRENCIES.join(', ')}`),
+    body('amount').isFloat({ gt: 0 }).withMessage('Amount must be greater than zero.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg });
+    }
+
     try {
-        const { currency, amount } = req.body;
-        if (!currency || !amount) {
-            return res.status(400).json({ message: 'Currency and amount are required.' });
-        }
-        if (amount <= 0) {
-            return res.status(400).json({ message: 'Amount must be greater than zero.' });
-        }
+        const currencyKey = req.body.currency.toUpperCase();
+        const amount = parseFloat(req.body.amount);
 
-        const validCurrencies = ['USD', 'BTC', 'ETH', 'LTC'];
-        const currencyKey = currency.toUpperCase();
-        if (!validCurrencies.includes(currencyKey)) {
-            return res.status(400).json({ message: `Unsupported currency. Supported: ${validCurrencies.join(', ')}` });
-        }
-
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
-
-        const currentBalance = user.wallet[currencyKey] || 0;
-        if (currentBalance < amount) {
-            return res.status(400).json({ message: `Insufficient ${currencyKey} balance. Available: ${currentBalance}` });
-        }
-
-        const updateField = `wallet.${currencyKey}`;
+        // Atomic withdrawal using $elemMatch to verify balance and $inc to decrement
         const updatedUser = await User.findOneAndUpdate(
-            { _id: req.user.id, [updateField]: { $gte: amount } },
-            { $inc: { [updateField]: -amount } },
+            {
+                _id: req.user.id,
+                wallet: { $elemMatch: { currency: currencyKey, balance: { $gte: amount } } }
+            },
+            { $inc: { 'wallet.$.balance': -amount } },
             { new: true, select: 'wallet username' }
         );
 
         if (!updatedUser) {
-            return res.status(400).json({ message: `Insufficient ${currencyKey} balance.` });
+            const user = await User.findById(req.user.id).select('wallet');
+            const entry = user && user.wallet.find(w => w.currency === currencyKey);
+            const available = entry ? entry.balance : 0;
+            return res.status(400).json({ message: `Insufficient ${currencyKey} balance. Available: ${available}` });
         }
 
         const transaction = new Transaction({
@@ -127,8 +120,8 @@ router.post('/withdraw', verifyToken, async (req, res) => {
     }
 });
 
-// GET /api/wallet/history - View transaction history
-router.get('/history', verifyToken, async (req, res) => {
+// GET /api/wallet/transactions - View transaction history
+router.get('/transactions', verifyToken, apiLimiter, async (req, res) => {
     try {
         const transactions = await Transaction.find({ userId: req.user.id }).sort({ createdAt: -1 });
         res.json({ success: true, transactions });
