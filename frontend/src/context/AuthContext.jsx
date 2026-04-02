@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer } from 'react';
 
 const AuthContext = createContext();
 
 const initialState = {
     user: null,
     token: localStorage.getItem('token') || null,
-    isAuthenticated: false
+    isAuthenticated: !!localStorage.getItem('token')
 };
 
 const reducer = (state, action) => {
@@ -23,12 +23,6 @@ const reducer = (state, action) => {
 
 export const AuthProvider = ({ children }) => {
     const [state, dispatch] = useReducer(reducer, initialState);
-
-    useEffect(() => {
-        if (state.token) {
-            dispatch({ type: 'LOGIN', payload: { user: state.user, token: state.token } });
-        }
-    }, []);
 
     const login = (user, token) => dispatch({ type: 'LOGIN', payload: { user, token } });
     const logout = () => dispatch({ type: 'LOGOUT' });
