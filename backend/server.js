@@ -9,6 +9,7 @@ const marketRoutes = require('./routes/market');
 const walletRoutes = require('./routes/wallet');
 const tradeRoutes = require('./routes/trade');
 const transactionRoutes = require('./routes/transactions');
+const orderRoutes = require('./routes/orders');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -40,6 +41,7 @@ app.use('/api/market', marketRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/trade', tradeRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -57,8 +59,10 @@ app.use((err, req, res, next) => {
     res.status(err.status || 500).json({ message: err.message || 'Internal server error.' });
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+if (require.main === module) {
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
+}
 
 module.exports = app;

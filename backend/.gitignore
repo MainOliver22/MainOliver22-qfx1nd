@@ -23,3 +23,6 @@ coverage/
 # Build output
 dist/
 build/
+
+# Test temp files
+tests/.mongo-test-uri
