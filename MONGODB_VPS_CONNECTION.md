@@ -13,7 +13,7 @@ This guide provides step-by-step instructions for connecting to a MongoDB databa
 
 ## Prerequisites
 Before you start, ensure that you have:  
-- A VPS running a Linux distribution (e.g., Ubuntu)
+- A VPS running a Linux distribution (e.g., Ubuntu 22.04 LTS)
 - Access to the server's terminal
 - Necessary permissions to install and configure software
 
@@ -22,11 +22,11 @@ Before you start, ensure that you have:
    ```bash
    sudo apt update
    ```
-2. **Install MongoDB:**  
-   You can install MongoDB using the official MongoDB repository:
+2. **Install MongoDB (v7.x):**  
+   Install MongoDB using the official MongoDB repository:
    ```bash
-   wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
-   echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/multiverse amd64 packages/" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
+   curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+   echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
    sudo apt update
    sudo apt install -y mongodb-org
    ```
@@ -57,7 +57,7 @@ Before you start, ensure that you have:
 ## User Creation
 1. **Connect to MongoDB shell:**  
    ```bash
-   mongo
+   mongosh
    ```
 2. **Create a new user with appropriate roles:**  
    ```javascript
@@ -86,25 +86,29 @@ mongodb://yourUser:yourPassword@yourVPS_IP:27017/yourDatabase
 ```
 
 ## Node.js Backend Configuration Examples
-1. **Install MongoDB driver:**  
-   ```bash
-   npm install mongodb
-   ```
-2. **Example code to connect to the MongoDB database:**  
-   ```javascript
-   const { MongoClient } = require('mongodb');
-   const uri = 'mongodb://yourUser:yourPassword@yourVPS_IP:27017/yourDatabase';
-   const client = new MongoClient(uri);
-   async function run() {
-       try {
-           await client.connect();
-           console.log('Connected to database');
-       } finally {
-           await client.close();
-       }
-   }
-   run().catch(console.dir);
-   ```
+The project already uses Mongoose (v7.x) for database connectivity. Set the `MONGODB_URI` environment variable in your `.env` file:
+
+```
+MONGODB_URI=mongodb://yourUser:yourPassword@yourVPS_IP:27017/crypto_exchange
+```
+
+The `backend/config/database.js` file reads this variable automatically and connects on server start.
+
+If you need a direct MongoDB driver connection:
+```javascript
+const { MongoClient } = require('mongodb');
+const uri = 'mongodb://yourUser:yourPassword@yourVPS_IP:27017/yourDatabase';
+const client = new MongoClient(uri);
+async function run() {
+    try {
+        await client.connect();
+        console.log('Connected to database');
+    } finally {
+        await client.close();
+    }
+}
+run().catch(console.dir);
+```
 
 ## Conclusion
 You have successfully set up your MongoDB database on a VPS. Follow the steps in this guide for future references or when troubleshooting connection issues.

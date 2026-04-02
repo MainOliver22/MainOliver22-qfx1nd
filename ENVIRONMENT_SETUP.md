@@ -7,12 +7,17 @@ This document provides the complete configuration guide for setting up the .env 
 To connect to your MongoDB database, use the following URI format:
 
 ```
-MONGODB_URI=mongodb://<username>:<password>@cluster0.mongodb.net/mydatabase?retryWrites=true&w=majority
+MONGODB_URI=mongodb://<username>:<password>@<host>:<port>/<database>
 ```
 
-**Example:**
+**Example (local):**
 ```
-MONGODB_URI=mongodb://admin:password123@cluster0.mongodb.net/mydatabase?retryWrites=true&w=majority
+MONGODB_URI=mongodb://localhost:27017/crypto_exchange
+```
+
+**Example (Atlas):**
+```
+MONGODB_URI=mongodb+srv://admin:password123@cluster0.mongodb.net/crypto_exchange?retryWrites=true&w=majority
 ```
 
 ## JWT Configuration
@@ -25,33 +30,31 @@ JWT_SECRET=your_jwt_secret_key
 
 **Example:**
 ```
-JWT_SECRET=mysecretpassword
+JWT_SECRET=a_long_random_string_change_in_production
 ```
 
-## API Keys
+## JWT Token Expiry
 
-Be sure to include any necessary API keys below:
-
-```
-API_KEY=your_api_key_here
-```
-
-**Example:**
-```
-API_KEY=123456789abcdef
-```
-
-## Other Required Environment Variables
-
-You may have other required environment variables depending on your application's needs. Here’s a placeholder format:
+Control how long issued tokens remain valid:
 
 ```
-OTHER_VARIABLE=value
+JWT_EXPIRES_IN=1h
 ```
 
-**Example:**
+**Accepted formats:** `30m`, `1h`, `7d`, `30d` (jsonwebtoken timespan format).
+
+## Server Port
+
+```
+PORT=3000
+```
+
+## Node Environment
+
 ```
 NODE_ENV=development
 ```
+
+Set to `production` in a production deployment.
 
 Make sure to replace the placeholders with your actual values before running the application.
