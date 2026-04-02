@@ -1,44 +1,38 @@
-# Project Documentation
+# Comprehensive Cryptocurrency Exchange Platform Documentation
 
-## Quick Start
-1. Clone the repository:
+## Features
+- User registration and authentication
+- Multi-currency support
+- Real-time market data
+- Trading and order management
+
+## API Endpoints
+- **GET /api/v1/products**: Retrieve list of products
+- **POST /api/v1/orders**: Place a new order
+- **GET /api/v1/orders/:id**: Retrieve order details
+
+## Setup Instructions
+1. Clone the repository
    ```bash
    git clone https://github.com/MainOliver22/MainOliver22-qfx1nd.git
    ```
-2. Navigate to the project directory:
-   ```bash
-   cd MainOliver22-qfx1nd
-   ```
-3. Install the dependencies:
+2. Install dependencies
    ```bash
    npm install
    ```
-4. Start the application:
+3. Start the application
    ```bash
    npm start
    ```
 
-## Project Structure
-- `/src`: Contains the source code.
-- `/public`: Static files served by the application.
-- `/test`: Test files for the application.
-- `README.md`: Project documentation.
-
-## API Endpoints
-- `GET /api/example`: Returns example data.
-- `POST /api/example`: Creates a new example entry.
-
-## Features
-- User authentication
-- Data visualization
-- Responsive design
-
-## Demo Account
-### Username: demo
-### Password: demo123
-
 ## Tech Stack
 - Node.js
-- Express
+- Express.js
 - MongoDB
-- React
+- React.js
+
+## Demo Account Details
+- Username: demo_user
+- Password: demo_pass
+
+Feel free to reach out for further questions!
